@@ -1,0 +1,124 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: uptime_postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    networks:
+      - uptime-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: uptime_redis
+    env_file:
+      - .env
+    ports:
+      - "${REDIS_PORT}:6379"
+    networks:
+      - uptime-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: uptime_php
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - "${PHP_PORT}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - uptime-network
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    env_file:
+      - .env
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: uptime_scheduler
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      - php
+      - postgres
+      - redis
+    networks:
+      - uptime-network
+    command: >
+      sh -c "while [ ! -f /var/www/html/artisan ]; do sleep 1; done &&
+             while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
+    env_file:
+      - .env
+
+  queue:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: uptime_queue
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    depends_on:
+      - php
+      - postgres
+      - redis
+    networks:
+      - uptime-network
+    command: >
+      sh -c "while [ ! -f /var/www/html/artisan ]; do sleep 1; done &&
+             php artisan queue:work redis --verbose --tries=3 --timeout=90"
+    env_file:
+      - .env
+
+  node:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+    container_name: uptime_node
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "${NODE_PORT}:3000"
+    networks:
+      - uptime-network
+    env_file:
+      - .env
+    environment:
+      VITE_API_URL: ${APP_URL}
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres-data:
+
+networks:
+  uptime-network:
+    driver: bridge
