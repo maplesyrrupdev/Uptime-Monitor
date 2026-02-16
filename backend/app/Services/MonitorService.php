@@ -65,12 +65,7 @@ class MonitorService
             $statusCode = $response->getStatusCode();
 
             if ($this->isAcceptableStatusCode($statusCode, $monitor->acceptable_status_codes)) {
-                if ($this->checkThresholds($metrics, $monitor)) {
-                    $status = 'success';
-                } else {
-                    $status = 'failure';
-                    $errorMessage = 'Превышены пороговые значения метрик';
-                }
+                $status = 'success';
             } else {
                 $status = 'failure';
                 $errorMessage = "Недопустимый код статуса: {$statusCode}";
@@ -108,14 +103,23 @@ class MonitorService
         ]);
 
         $previousStatus = $monitor->status;
-        $newStatus = $status === 'success' ? 'up' : 'down';
+
+        // Determine new status
+        if ($status === 'success') {
+            // Check if thresholds are breached
+            if ($this->checkThresholds($metrics, $monitor)) {
+                $newStatus = 'up';
+            } else {
+                $newStatus = 'degraded';
+            }
+        } else {
+            $newStatus = 'down';
+        }
 
         $monitor->update([
             'status' => $newStatus,
             'last_checked_at' => now(),
         ]);
-
-        // todo: проверить изменение статуса и отправить алерт
 
         return $check;
     }
