@@ -43,8 +43,12 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json([
-            'user' => $request->user(),
-        ]);
+        if (!$request->user()) {
+            return response()->json([
+                'message' => 'Неавторизован',
+            ], 401);
+        }
+
+        return response()->json($request->user());
     }
 }
