@@ -72,7 +72,7 @@ services:
       - uptime-network
     command: >
       sh -c "while [ ! -f /var/www/html/artisan ]; do sleep 1; done &&
-             while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
+             while true; do php artisan schedule:run --verbose --no-interaction & sleep 30; done"
     env_file:
       - .env
 
