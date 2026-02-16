@@ -3,6 +3,7 @@
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MonitorController;
+use App\Http\Controllers\PublicController;
 use App\Http\Controllers\SetupController;
 use App\Http\Middleware\EnsureSetupCompleted;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,12 @@ Route::prefix('setup')->group(function () {
 Route::middleware([EnsureSetupCompleted::class])->group(function () {
     Route::post('/auth/login', [AuthController::class, 'login']);
     Route::get('/auth/me', [AuthController::class, 'me']);
+
+    Route::prefix('public')->group(function () {
+        Route::get('/stats', [PublicController::class, 'stats']);
+        Route::get('/monitors', [PublicController::class, 'monitors']);
+        Route::get('/monitors/{id}', [PublicController::class, 'monitor']);
+    });
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
