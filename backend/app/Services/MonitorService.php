@@ -88,7 +88,7 @@ class MonitorService
         } catch (\Exception $e) {
             $status = 'error';
             $errorMessage = 'Неизвестная ошибка: ' . $e->getMessage();
-            Log::error('Monitor check failed', [
+            Log::error('Не удалось выполнить проверку монитора', [
                 'monitor_id' => $monitor->id,
                 'error' => $e->getMessage(),
             ]);
