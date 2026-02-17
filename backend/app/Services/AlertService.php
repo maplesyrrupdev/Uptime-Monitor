@@ -45,7 +45,9 @@ class AlertService
         string $triggerReason,
         ?MonitorCheck $check = null
     ): array {
-        $body = $this->renderTemplate($alert->webhook_body, $monitor, $check);
+        $body = $alert->webhook_body
+            ? $this->renderTemplate($alert->webhook_body, $monitor, $check)
+            : null;
 
         $headers = is_array($alert->webhook_headers) ? $alert->webhook_headers : [];
 
