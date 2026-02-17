@@ -16,7 +16,9 @@ class AlertController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()->json($alerts);
+        return response()->json([
+            'alerts' => $alerts,
+        ]);
     }
 
     public function store(Request $request)
@@ -81,7 +83,9 @@ class AlertController extends Controller
             ], 404);
         }
 
-        return response()->json($alert);
+        return response()->json([
+            'alert' => $alert,
+        ]);
     }
 
     public function update(Request $request, $id)
