@@ -124,8 +124,10 @@ class AlertService
     {
         return Alert::where('is_active', true)
             ->where(function ($query) use ($monitor) {
-                $query->where('monitor_id', $monitor->id)
-                    ->orWhereNull('monitor_id');
+                $query->whereDoesntHave('monitors')
+                    ->orWhereHas('monitors', function ($q) use ($monitor) {
+                        $q->where('monitors.id', $monitor->id);
+                    });
             })
             ->get()
             ->filter(function (Alert $alert) use ($triggerReason) {

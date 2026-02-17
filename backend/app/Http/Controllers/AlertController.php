@@ -12,7 +12,7 @@ class AlertController extends Controller
 {
     public function index()
     {
-        $alerts = Alert::with('monitor:id,name,url')
+        $alerts = Alert::with('monitors:id,name')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -22,7 +22,8 @@ class AlertController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'monitor_id' => 'nullable|exists:monitors,id',
+            'monitor_ids' => 'nullable|array',
+            'monitor_ids.*' => 'exists:monitors,id',
             'name' => 'required|string|max:255',
             'webhook_url' => 'required|url|max:500',
             'webhook_method' => 'required|in:GET,POST',
@@ -32,7 +33,7 @@ class AlertController extends Controller
             'trigger_on.*' => 'in:failure,recovery,threshold_breach',
             'is_active' => 'boolean',
         ], [
-            'monitor_id.exists' => 'Указанный монитор не найден',
+            'monitor_ids.*.exists' => 'Указанный монитор не найден',
             'name.required' => 'Укажите название алерта',
             'webhook_url.required' => 'Укажите URL вебхука',
             'webhook_url.url' => 'Укажите корректный URL',
@@ -51,7 +52,6 @@ class AlertController extends Controller
         }
 
         $alert = Alert::create([
-            'monitor_id' => $request->monitor_id,
             'name' => $request->name,
             'webhook_url' => $request->webhook_url,
             'webhook_method' => $request->webhook_method,
@@ -61,15 +61,19 @@ class AlertController extends Controller
             'is_active' => $request->is_active ?? true,
         ]);
 
+        if ($request->has('monitor_ids') && is_array($request->monitor_ids) && !empty($request->monitor_ids)) {
+            $alert->monitors()->sync($request->monitor_ids);
+        }
+
         return response()->json([
             'message' => 'Алерт успешно создан',
-            'alert' => $alert->load('monitor:id,name,url'),
+            'alert' => $alert->load('monitors:id,name'),
         ], 201);
     }
 
     public function show($id)
     {
-        $alert = Alert::with('monitor:id,name,url')->find($id);
+        $alert = Alert::with('monitors:id,name')->find($id);
 
         if (!$alert) {
             return response()->json([
@@ -91,7 +95,8 @@ class AlertController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'monitor_id' => 'nullable|exists:monitors,id',
+            'monitor_ids' => 'nullable|array',
+            'monitor_ids.*' => 'exists:monitors,id',
             'name' => 'sometimes|required|string|max:255',
             'webhook_url' => 'sometimes|required|url|max:500',
             'webhook_method' => 'sometimes|required|in:GET,POST',
@@ -101,7 +106,7 @@ class AlertController extends Controller
             'trigger_on.*' => 'in:failure,recovery,threshold_breach',
             'is_active' => 'boolean',
         ], [
-            'monitor_id.exists' => 'Указанный монитор не найден',
+            'monitor_ids.*.exists' => 'Указанный монитор не найден',
             'name.required' => 'Укажите название алерта',
             'webhook_url.required' => 'Укажите URL вебхука',
             'webhook_url.url' => 'Укажите корректный URL',
@@ -120,7 +125,6 @@ class AlertController extends Controller
         }
 
         $alert->update($request->only([
-            'monitor_id',
             'name',
             'webhook_url',
             'webhook_method',
@@ -130,9 +134,17 @@ class AlertController extends Controller
             'is_active',
         ]));
 
+        if ($request->has('monitor_ids')) {
+            if (is_array($request->monitor_ids) && !empty($request->monitor_ids)) {
+                $alert->monitors()->sync($request->monitor_ids);
+            } else {
+                $alert->monitors()->detach();
+            }
+        }
+
         return response()->json([
             'message' => 'Алерт успешно обновлен',
-            'alert' => $alert->load('monitor:id,name,url'),
+            'alert' => $alert->load('monitors:id,name'),
         ]);
     }
 
