@@ -62,7 +62,8 @@ class CheckMonitor implements ShouldQueue
                 ]);
             }
 
-            if ($previousStatus === 'down' && in_array($newStatus, ['up', 'degraded'])) {
+            if (($previousStatus === 'down' && in_array($newStatus, ['up', 'degraded'])) ||
+                ($previousStatus === 'degraded' && $newStatus === 'up')) {
                 $alertReasons[] = 'recovery';
                 Log::info('Монитор восстановлен', [
                     'monitor_id' => $this->monitor->id,
