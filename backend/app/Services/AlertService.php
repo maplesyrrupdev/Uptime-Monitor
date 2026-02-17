@@ -50,13 +50,22 @@ class AlertService
         $headers = is_array($alert->webhook_headers) ? $alert->webhook_headers : [];
 
         try {
-            $response = Http::withHeaders($headers)
-                ->timeout(30)
-                ->{strtolower($alert->webhook_method)}($alert->webhook_url, [
-                    'body' => $body,
-                ]);
+            $method = strtolower($alert->webhook_method);
+
+            if ($method === 'post') {
+                $response = Http::withHeaders($headers)
+                    ->timeout(30)
+                    ->send('POST', $alert->webhook_url, [
+                        'body' => $body,
+                    ]);
+            } else {
+                $response = Http::withHeaders($headers)
+                    ->timeout(30)
+                    ->get($alert->webhook_url);
+            }
 
             $statusCode = $response->status();
+            $responseBody = $response->body();
             $success = $response->successful();
 
             AlertLog::create([
@@ -70,12 +79,15 @@ class AlertService
                     'body' => $body,
                 ],
                 'response_status' => $statusCode,
+                'response_body' => $responseBody,
+                'error_message' => $success ? null : "HTTP {$statusCode}: {$responseBody}",
                 'sent_at' => now(),
             ]);
 
             return [
                 'success' => $success,
                 'status_code' => $statusCode,
+                'response_body' => $responseBody,
             ];
         } catch (\Exception $e) {
             Log::error('Не удалось отправить алерт', [
@@ -95,6 +107,8 @@ class AlertService
                     'body' => $body,
                 ],
                 'response_status' => null,
+                'response_body' => null,
+                'error_message' => $e->getMessage(),
                 'sent_at' => now(),
             ]);
 

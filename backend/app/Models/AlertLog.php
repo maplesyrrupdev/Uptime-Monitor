@@ -16,6 +16,8 @@ class AlertLog extends Model
         'trigger_reason',
         'payload_sent',
         'response_status',
+        'response_body',
+        'error_message',
         'sent_at',
     ];
 
