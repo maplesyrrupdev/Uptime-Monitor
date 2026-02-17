@@ -45,14 +45,14 @@ class AlertService
         string $triggerReason,
         ?MonitorCheck $check = null
     ): array {
-        $body = $this->renderTemplate($alert->body, $monitor, $check);
+        $body = $this->renderTemplate($alert->webhook_body, $monitor, $check);
 
-        $headers = is_array($alert->headers) ? $alert->headers : [];
+        $headers = is_array($alert->webhook_headers) ? $alert->webhook_headers : [];
 
         try {
             $response = Http::withHeaders($headers)
                 ->timeout(30)
-                ->{strtolower($alert->method)}($alert->webhook_url, [
+                ->{strtolower($alert->webhook_method)}($alert->webhook_url, [
                     'body' => $body,
                 ]);
 
@@ -65,7 +65,7 @@ class AlertService
                 'trigger_reason' => $triggerReason,
                 'payload_sent' => [
                     'url' => $alert->webhook_url,
-                    'method' => $alert->method,
+                    'method' => $alert->webhook_method,
                     'headers' => $headers,
                     'body' => $body,
                 ],
@@ -90,7 +90,7 @@ class AlertService
                 'trigger_reason' => $triggerReason,
                 'payload_sent' => [
                     'url' => $alert->webhook_url,
-                    'method' => $alert->method,
+                    'method' => $alert->webhook_method,
                     'headers' => $headers,
                     'body' => $body,
                 ],

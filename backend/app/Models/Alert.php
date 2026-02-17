@@ -15,15 +15,15 @@ class Alert extends Model
         'monitor_id',
         'name',
         'webhook_url',
-        'method',
-        'headers',
-        'body',
+        'webhook_method',
+        'webhook_headers',
+        'webhook_body',
         'trigger_on',
         'is_active',
     ];
 
     protected $casts = [
-        'headers' => 'array',
+        'webhook_headers' => 'array',
         'trigger_on' => 'array',
         'is_active' => 'boolean',
     ];
