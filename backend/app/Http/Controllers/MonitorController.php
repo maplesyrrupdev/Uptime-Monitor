@@ -2,16 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendAlert;
 use App\Models\Monitor;
+use App\Services\AlertService;
 use App\Services\MonitorService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class MonitorController extends Controller
 {
     public function __construct(
-        private MonitorService $monitorService
+        private MonitorService $monitorService,
+        private AlertService $alertService
     ) {}
 
     public function index()
@@ -209,14 +213,74 @@ class MonitorController extends Controller
     public function checkNow(Monitor $monitor)
     {
         try {
+            $previousStatus = $monitor->status;
+
             $check = $this->monitorService->checkMonitor($monitor);
+
+            $monitor->refresh();
+            $newStatus = $monitor->status;
+
+            Log::info('Запущена ручная проверка', [
+                'monitor_id' => $monitor->id,
+                'monitor_name' => $monitor->name,
+                'previous_status' => $previousStatus,
+                'new_status' => $newStatus,
+            ]);
+
+            $alertReasons = [];
+
+            if (in_array($previousStatus, ['up', 'degraded']) && $newStatus === 'down') {
+                $alertReasons[] = 'failure';
+                Log::info('Обнаружен сбой монитора (ручная проверка)', [
+                    'monitor_id' => $monitor->id,
+                    'previous_status' => $previousStatus,
+                    'new_status' => $newStatus,
+                ]);
+            }
+
+            if (($previousStatus === 'down' && in_array($newStatus, ['up', 'degraded'])) ||
+                ($previousStatus === 'degraded' && $newStatus === 'up')) {
+                $alertReasons[] = 'recovery';
+                Log::info('Монитор восстановлен (ручная проверка)', [
+                    'monitor_id' => $monitor->id,
+                    'previous_status' => $previousStatus,
+                    'new_status' => $newStatus,
+                ]);
+            }
+
+            if ($previousStatus === 'up' && $newStatus === 'degraded') {
+                $alertReasons[] = 'threshold_breach';
+                Log::info('Обнаружено превышение порогов (ручная проверка)', [
+                    'monitor_id' => $monitor->id,
+                    'transition' => 'up -> degraded',
+                ]);
+            }
+
+            foreach ($alertReasons as $reason) {
+                $alerts = $this->alertService->findTriggeredAlerts($monitor, $reason);
+                foreach ($alerts as $alert) {
+                    SendAlert::dispatch($alert, $monitor, $reason, $check->id);
+                    Log::info('Запланирована отправка алерта (ручная проверка)', [
+                        'alert_id' => $alert->id,
+                        'alert_name' => $alert->name,
+                        'monitor_id' => $monitor->id,
+                        'reason' => $reason,
+                    ]);
+                }
+            }
 
             return response()->json([
                 'message' => 'Проверка выполнена',
                 'check' => $check,
-                'monitor' => $monitor->fresh(),
+                'monitor' => $monitor,
+                'alerts_triggered' => count($alertReasons) > 0,
             ]);
         } catch (\Exception $e) {
+            Log::error('Ошибка при выполнении ручной проверки', [
+                'monitor_id' => $monitor->id,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'message' => 'Ошибка при выполнении проверки',
                 'error' => $e->getMessage(),
