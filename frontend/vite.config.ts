@@ -19,6 +19,10 @@ export default defineConfig({
         target: 'http://php:8000',
         changeOrigin: true,
       },
+      '/sanctum': {
+        target: 'http://php:8000',
+        changeOrigin: true,
+      },
     },
   },
 })
