@@ -34,6 +34,16 @@ export const alertSchema = z.object({
   webhook_body: z.string().nullable(),
 
   is_active: z.boolean().default(true),
+}).superRefine((data, ctx) => {
+  if (data.webhook_method === 'POST') {
+    if (!data.webhook_body || data.webhook_body.trim() === '') {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Укажите тело запроса для POST метода',
+        path: ['webhook_body'],
+      });
+    }
+  }
 });
 
 export type AlertFormData = z.infer<typeof alertSchema>;
