@@ -133,8 +133,7 @@ class AlertService
             })
             ->get()
             ->filter(function (Alert $alert) use ($triggerReason) {
-                $triggers = is_array($alert->trigger_on) ? $alert->trigger_on : json_decode($alert->trigger_on, true);
-                return in_array($triggerReason, $triggers ?? []);
+                return in_array($triggerReason, $alert->trigger_on ?? []);
             })
             ->all();
     }

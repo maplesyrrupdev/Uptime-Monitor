@@ -185,6 +185,8 @@ class AlertController extends Controller
             ->limit(100)
             ->get();
 
-        return response()->json($logs);
+        return response()->json([
+            'logs' => $logs,
+        ]);
     }
 }
