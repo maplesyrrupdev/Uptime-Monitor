@@ -33,7 +33,7 @@ export const monitorFormSchema = z.object({
 
     interval: z.number({
         error: (issue) => issue.input === undefined || issue.input === null ? "Укажите интервал" : "Интервал должен быть числом"
-    }).min(1, "Интервал должен быть не менее 30 секунд").max(300, "Интервал не должен превышать 3600 секунд"),
+    }).min(30, "Интервал должен быть не менее 30 секунд").max(3600, "Интервал не должен превышать 3600 секунд"),
 
     acceptable_status_codes: z
         .array(z.string())
