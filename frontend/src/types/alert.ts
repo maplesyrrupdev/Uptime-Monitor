@@ -19,15 +19,24 @@ export type AlertLog = {
   id: number;
   alert_id: number;
   monitor_id: number;
-  trigger: string;
-  webhook_url: string;
-  webhook_method: string;
-  webhook_headers: Record<string, string> | null;
-  webhook_body: string | null;
+  trigger_reason: string;
+  payload_sent: {
+    url: string;
+    method: string;
+    headers: any[];
+    body: string;
+  };
   response_status: number | null;
+  sent_at: string;
+  created_at: string;
+  updated_at: string;
   response_body: string | null;
   error_message: string | null;
-  created_at: string;
+  monitor: {
+    id: number;
+    name: string;
+    url: string;
+  };
 };
 
 export type CreateAlertData = {
