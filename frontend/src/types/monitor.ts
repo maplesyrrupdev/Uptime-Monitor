@@ -22,7 +22,7 @@ export type Monitor = {
 export type MonitorCheck = {
   id: number;
   monitor_id: number;
-  status: 'success' | 'failure';
+  status: 'success' | 'success_degraded' | 'failure';
   status_code: number | null;
   response_time: number | null;
   dns_time: number | null;
