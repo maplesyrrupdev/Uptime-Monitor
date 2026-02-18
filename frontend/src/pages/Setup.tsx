@@ -1,33 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LoaderCircle } from "lucide-react";
 
 export function Setup() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+  const { markSetupComplete } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    api.get('/setup/status')
-      .then((response) => {
-        if (response.data.setup_complete) {
-          navigate('/login');
-        } else {
-          setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        setIsLoading(false);
-      });
-  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,16 +31,13 @@ export function Setup() {
         password,
         password_confirmation: passwordConfirmation,
       });
+      markSetupComplete();
       navigate('/login');
     } catch (err) {
       const message = (err as { response?: { data?: { message?: string } } }).response?.data?.message;
       setError(message || 'Ошибка при создании администратора');
     }
   };
-
-  if (isLoading) {
-    return <LoaderCircle className="h-12 w-12 animate-spin mx-auto mb-4 text-muted-foreground" />
-  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background">

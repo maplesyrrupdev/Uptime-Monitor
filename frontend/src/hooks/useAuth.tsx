@@ -15,6 +15,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
+  markSetupComplete: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -81,6 +82,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     init();
   }, []);
 
+  const markSetupComplete = () => setIsSetupComplete(true);
+
   const value = {
     user,
     isLoading,
@@ -89,6 +92,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     logout,
     checkAuth,
+    markSetupComplete,
   };
 
   return (
