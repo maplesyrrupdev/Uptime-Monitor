@@ -165,8 +165,7 @@ class MonitorController extends Controller
     public function checks(Monitor $monitor)
     {
         $checks = $monitor->checks()
-            ->orderBy('checked_at', 'desc')
-            ->paginate(100);
+            ->orderBy('checked_at', 'desc');
 
         return response()->json($checks);
     }

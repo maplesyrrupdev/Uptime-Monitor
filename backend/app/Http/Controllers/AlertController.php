@@ -181,8 +181,7 @@ class AlertController extends Controller
 
         $logs = AlertLog::where('alert_id', $id)
             ->with('monitor:id,name,url')
-            ->orderBy('sent_at', 'desc')
-            ->paginate(50);
+            ->orderBy('sent_at', 'desc');
 
         return response()->json($logs);
     }
