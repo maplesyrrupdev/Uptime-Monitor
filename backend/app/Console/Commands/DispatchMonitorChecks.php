@@ -38,26 +38,34 @@ class DispatchMonitorChecks extends Command
                 if ($monitor->last_checked_at === null) {
                     return true;
                 }
-
-                $nextCheckTime = $monitor->last_checked_at->copy()->addSeconds($monitor->interval);
-                return $nextCheckTime->isPast();
+                return $monitor->last_checked_at->copy()->addSeconds($monitor->interval)->isPast();
             });
 
         if ($monitors->isEmpty()) {
-            $this->info('Нет мониторов для проверки.');
             return;
         }
 
         $count = 0;
         foreach ($monitors as $monitor) {
-            CheckMonitor::dispatch($monitor);
+            $claimed = Monitor::where('id', $monitor->id)
+                ->where(function ($query) use ($monitor) {
+                    $query->whereNull('last_checked_at')
+                        ->orWhere('last_checked_at', $monitor->last_checked_at);
+                })
+                ->update(['last_checked_at' => now()]);
 
-            $monitor->update(['last_checked_at' => now()]);
+            if ($claimed === 0) {
+                continue;
+            }
+
+            CheckMonitor::dispatch($monitor);
 
             $count++;
             $this->info("Отправлена задача для монитора: {$monitor->name} (ID: {$monitor->id})");
         }
 
-        $this->info("Отправлено задач: {$count}");
+        if ($count > 0) {
+            $this->info("Отправлено задач: {$count}");
+        }
     }
 }
