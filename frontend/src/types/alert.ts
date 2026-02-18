@@ -23,7 +23,7 @@ export type AlertLog = {
   payload_sent: {
     url: string;
     method: string;
-    headers: any[];
+    headers: Record<string, string> | null;
     body: string;
   };
   response_status: number | null;
