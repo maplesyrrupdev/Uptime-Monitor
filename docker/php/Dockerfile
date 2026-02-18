@@ -17,7 +17,3 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN pecl install redis && docker-php-ext-enable redis
 
 WORKDIR /var/www/html
-
-EXPOSE 8000
-
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
