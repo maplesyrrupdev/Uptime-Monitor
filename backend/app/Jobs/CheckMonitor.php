@@ -102,29 +102,6 @@ class CheckMonitor implements ShouldQueue
         }
     }
 
-    private function checkThresholdBreaches($check): array
-    {
-        $breaches = [];
-
-        if ($this->monitor->dns_time_threshold && $check->dns_time > $this->monitor->dns_time_threshold) {
-            $breaches[] = 'dns_time';
-        }
-
-        if ($this->monitor->connect_time_threshold && $check->connect_time > $this->monitor->connect_time_threshold) {
-            $breaches[] = 'connect_time';
-        }
-
-        if ($this->monitor->ttfb_threshold && $check->ttfb > $this->monitor->ttfb_threshold) {
-            $breaches[] = 'ttfb';
-        }
-
-        if ($this->monitor->response_time_threshold && $check->response_time > $this->monitor->response_time_threshold) {
-            $breaches[] = 'response_time';
-        }
-
-        return $breaches;
-    }
-
     public function failed(\Throwable $exception): void
     {
         Log::error('Задача проверки мониторов провалилась после максимального количества попыток', [
