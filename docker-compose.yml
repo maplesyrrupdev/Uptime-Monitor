@@ -54,8 +54,15 @@ services:
       - uptime-network
     command: >
       sh -c "while [ ! -f /var/www/html/artisan ]; do sleep 1; done &&
+             composer install --no-interaction &&
              php artisan migrate --force &&
              php artisan serve --host=0.0.0.0 --port=8000"
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan --version || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 120s
     env_file:
       - .env
 
@@ -68,9 +75,12 @@ services:
     volumes:
       - ./backend:/var/www/html
     depends_on:
-      - php
-      - postgres
-      - redis
+      php:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - uptime-network
     command: >
@@ -88,14 +98,17 @@ services:
     volumes:
       - ./backend:/var/www/html
     depends_on:
-      - php
-      - postgres
-      - redis
+      php:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - uptime-network
     command: >
       sh -c "while [ ! -f /var/www/html/artisan ]; do sleep 1; done &&
-             php artisan queue:work redis --verbose --tries=3 --timeout=90"
+             php artisan queue:work redis --verbose --tries=3 --timeout=120"
     env_file:
       - .env
 
