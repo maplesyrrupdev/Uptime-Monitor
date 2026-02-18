@@ -11,6 +11,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isSetupComplete: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -25,6 +26,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSetupComplete, setIsSetupComplete] = useState(true);
 
   const checkAuth = async () => {
     try {
@@ -34,10 +36,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         setUser(null);
       }
-    } catch (error) {
+    } catch {
       setUser(null);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -56,13 +56,36 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   useEffect(() => {
-    checkAuth();
+    const init = async () => {
+      const [setupResult, authResult] = await Promise.allSettled([
+        api.get('/setup/status'),
+        api.get('/auth/me'),
+      ]);
+
+      if (setupResult.status === 'fulfilled') {
+        setIsSetupComplete(setupResult.value.data.setup_complete);
+      } else {
+        setIsSetupComplete(false);
+      }
+
+      if (authResult.status === 'fulfilled') {
+        const data = authResult.value.data;
+        if (data && !data.message) {
+          setUser(data);
+        }
+      }
+
+      setIsLoading(false);
+    };
+
+    init();
   }, []);
 
   const value = {
     user,
     isLoading,
     isAuthenticated: !!user,
+    isSetupComplete,
     login,
     logout,
     checkAuth,
@@ -75,6 +98,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
