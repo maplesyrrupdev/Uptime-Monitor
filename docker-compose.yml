@@ -52,7 +52,10 @@ services:
         condition: service_healthy
     networks:
       - uptime-network
-    command: php artisan serve --host=0.0.0.0 --port=8000
+    command: >
+      sh -c "while [ ! -f /var/www/html/artisan ]; do sleep 1; done &&
+             php artisan migrate --force &&
+             php artisan serve --host=0.0.0.0 --port=8000"
     env_file:
       - .env
 
@@ -72,7 +75,7 @@ services:
       - uptime-network
     command: >
       sh -c "while [ ! -f /var/www/html/artisan ]; do sleep 1; done &&
-             while true; do php artisan schedule:run --verbose --no-interaction & sleep 30; done"
+             while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
     env_file:
       - .env
 

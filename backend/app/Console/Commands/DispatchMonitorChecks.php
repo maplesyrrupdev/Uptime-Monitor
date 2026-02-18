@@ -15,6 +15,23 @@ class DispatchMonitorChecks extends Command
     {
         $this->info('Проверка мониторов, которым пора проверяться...');
 
+        $endTime = now()->addSeconds(55);
+
+        while (true) {
+            $this->checkMonitors();
+
+            if (now()->greaterThanOrEqualTo($endTime)) {
+                break;
+            }
+
+            sleep(1);
+        }
+
+        return self::SUCCESS;
+    }
+
+    protected function checkMonitors()
+    {
         $monitors = Monitor::where('is_active', true)
             ->get()
             ->filter(function (Monitor $monitor) {
@@ -28,18 +45,19 @@ class DispatchMonitorChecks extends Command
 
         if ($monitors->isEmpty()) {
             $this->info('Нет мониторов для проверки.');
-            return self::SUCCESS;
+            return;
         }
 
         $count = 0;
         foreach ($monitors as $monitor) {
             CheckMonitor::dispatch($monitor);
+
+            $monitor->update(['last_checked_at' => now()]);
+
             $count++;
             $this->info("Отправлена задача для монитора: {$monitor->name} (ID: {$monitor->id})");
         }
 
         $this->info("Отправлено задач: {$count}");
-
-        return self::SUCCESS;
     }
 }
