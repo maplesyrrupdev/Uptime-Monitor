@@ -32,4 +32,4 @@ cd Uptime-Monitor
 docker-compose up -d
 ```
 
-Сервис будет доступен по адресу http://localhost:3000
+Сервис будет доступен по адресу http://localhost:{NODE_PORT}
