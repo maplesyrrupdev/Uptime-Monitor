@@ -25,10 +25,9 @@
 
 **Для запуска нужны Docker и Docker Compose.**
 
-Сначала переименуйте .env.example в .env и измените настройки на необходимые. Далее:
-
 ```bash
 git clone https://github.com/maplesyrrupdev/Uptime-Monitor.git
+Переименуйте .env.example в .env и измените настройки на необходимые
 cd Uptime-Monitor-main
 docker-compose up -d
 ```
