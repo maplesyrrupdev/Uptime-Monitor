@@ -28,7 +28,7 @@
 ```bash
 git clone https://github.com/maplesyrrupdev/Uptime-Monitor.git
 Переименуйте .env.example в .env и измените настройки на необходимые
-cd Uptime-Monitor-main
+cd Uptime-Monitor
 docker-compose up -d
 ```
 
